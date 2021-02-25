@@ -166,6 +166,10 @@ pub enum Error {
     #[cfg(any(feature = "ledger-nano", feature = "ledger-nano-simulator"))]
     #[error("ledger essence too large")]
     LedgerEssenceTooLarge,
+    /// Ledger Timeout on Interactive Flows
+    #[cfg(any(feature = "ledger-nano", feature = "ledger-nano-simulator"))]
+    #[error("ledger timeout")]
+    LedgerTimeout,
     /// Account alias must be unique.
     #[error("can't create account: account alias already exists")]
     AccountAliasAlreadyExists,
@@ -204,8 +208,9 @@ impl From<crate::stronghold::Error> for Error {
 // LedgerDongleLocked: Ask the user to unlock the dongle
 // LedgerDeniedByUser: The user denied a signing
 // LedgerDeviceNotFound: No usable Ledger device was found
-// LedgerMiscError: Everything else.
 // LedgerEssenceTooLarge: Essence with bip32 input indices need more space then the internal buffer is big
+// LedgerTimeout: Timeout while waiting on user interaction occured
+// LedgerMiscError: Everything else.
 #[cfg(any(feature = "ledger-nano", feature = "ledger-nano-simulator"))]
 impl From<iota_ledger::api::errors::APIError> for Error {
     fn from(error: iota_ledger::api::errors::APIError) -> Self {
@@ -215,9 +220,10 @@ impl From<iota_ledger::api::errors::APIError> for Error {
             iota_ledger::api::errors::APIError::ConditionsOfUseNotSatisfied => Error::LedgerDeniedByUser,
             iota_ledger::api::errors::APIError::TransportError => Error::LedgerDeviceNotFound,
             iota_ledger::api::errors::APIError::EssenceTooLarge => Error::LedgerEssenceTooLarge,
+            iota_ledger::api::errors::APIError::CommandTimeout => Error::LedgerTimeout,
             _ => Error::LedgerMiscError,
         }
-    }
+    } 
 }
 
 impl serde::Serialize for Error {
@@ -283,6 +289,8 @@ impl serde::Serialize for Error {
             Self::LedgerDeviceNotFound => serialize_variant(self, serializer, "LedgerDeviceNotFound"),
             #[cfg(any(feature = "ledger-nano", feature = "ledger-nano-simulator"))]
             Self::LedgerEssenceTooLarge => serialize_variant(self, serializer, "LedgerEssenceTooLarge"),
+            #[cfg(any(feature = "ledger-nano", feature = "ledger-nano-simulator"))]
+            Self::LedgerTimeout => serialize_variant(self, serializer, "LedgerTimeout"),
             Self::AccountAliasAlreadyExists => serialize_variant(self, serializer, "AccountAliasAlreadyExists"),
             Self::DustError(_) => serialize_variant(self, serializer, "DustError"),
             Self::InvalidOutputKind(_) => serialize_variant(self, serializer, "InvalidOutputKind"),
